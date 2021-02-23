@@ -7,127 +7,202 @@ import time
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from threading import Thread
-import os
+import os, sys
 
-count = 1
-songcount = 0
-titlecount = 0
-musiclist = []
-musiclink = []
-nmusiclink = []
-savemusic = []
-savename = []
-new = []
+count = 0
+count2 = 0
+idlink = []
+pidlink = []
+namelist = []
+name = []
 nextsong = []
+new = []
 url = []
-answer = None
+stop = False
 
-def timing():
-    time_limit = 5
+def main2(media,url):    
+    global stop 
     while True:
-        time_taken = time.time() - start_time
-        if answer is not None:            
-            os._exit(1)
-        if time_taken > time_limit:                        
-            break
-        time.sleep(0.001)
-        
+        print("<1> Stop  <2> Next Song  <3> Find Song <4> Check Status  <5> Download Song  <6> Save to Playlist")
+        a2 = (input("Choose -->  "))
+        if a2 == "1":
+            if stop == False:
+                stop = True
+                continue                
+            if stop == True:      
+                stop = False
+                continue                 
+        if a2 == "2":                
+            if stop == False:
+                stop = True
+                media.stop()
+                play(-1,0,1)  
+            if stop == True:      
+                stop = False
+                media.stop()
+                play(-1,0,1)  
+        if a2 == "3":
+            if stop == False:
+                stop = True
+                t1 = Thread(target=search)    
+                t1.start()
+                time.sleep(8)
+                media.stop()
+                break
+            if stop == True:      
+                stop = False
+                t1 = Thread(target=search)    
+                t1.start()
+                time.sleep(8)
+                media.stop()
+                break           
+        if a2 == "4":
+            countdown(media)
+        if a2 == "5":
+            print(YouTube(url).title +" is downloading")
+            t1 = Thread(target=download,args=(url,))    
+            t1.start()   
+            continue
+        if a2 == '6':
+            save = open("Playlist.txt","a+")            
+            save.writelines(url+"\n")
+            save.writelines(YouTube(url).title + "\n")   
+            save.close()            
+            continue
+        else:
+            print("Typo")
+            continue
+
 def main():
-    global start_time, answer
-    start_time = time.time()
-    musiclist.clear()
-    musiclink.clear()
-    nmusiclink.clear()        
-    a1 = input("Find -> ")
+    while True:
+        idlink.clear()
+        pidlink.clear()
+        url.clear()
+        namelist.clear()
+        name.clear()
+        print("<1> Find  <2> Show Playlist")
+        a = (input("Choose -> "))
+        if a.isdigit() == True:
+            if int(a) == 1:
+                search()
+            if int(a) == 2:
+                if os.path.exists("Playlist.txt"):
+                    read = open("Playlist.txt","r") 
+                    savelist = [(line.strip()).split() for line in read]
+                    for i in savelist:
+                        a = (''.join(i))
+                        if "https" in a:
+                            pass
+                        else:
+                            print(a)
+                else:
+                    os.system("touch Playlist.txt")
+                    print("It is empty")
+                    continue   
+            else:
+                print("Out of Range")
+                continue
+        else:
+            print("Number only")     
+            continue   
+
+def search():
+    a1 = input("Find --> ")
     search = VideosSearch(a1.replace(" ","+"))    
     a = list((search.result().items()))
     b = (''.join(str(e) for e in a))
     c = b.split(',')
-    links(c,search)
-    mlist(c,search)
-    time.sleep(0.001)
+    get(c,search)
 
-def links(c,search):
+def get(c,search):
     global count
-    global songcount
-    global titlecount
+    global count2
     for i in c:
-        if ("id':" not in c[songcount]):  
+        if "id':" not in c[count]:  
             pass
         else:
-            musiclink.append(c[songcount])        
-        songcount += 1
-
-    for i in range(int(len(musiclink)/2)):   
-        a = musiclink[titlecount].split("id")        
-        nmusiclink.append(a[1].replace("': ",""))
-        titlecount += 2
-        count += 1
-    for i in nmusiclink:    
-        url.append("https://www.youtube.com/watch?v="+i.replace("'",""))    
-    count = 1
-    songcount = 0
-    titlecount = 0    
-
-def mlist(c,search):
-    global count
-    global songcount
-    global titlecount
-    for i in c:
-        if ("title" not in c[songcount]):  
+            idlink.append(c[count])      
+        if ("title" not in c[count]):  
             pass
         else:
-            musiclist.append(c[songcount])        
-        songcount += 1
-
-    for i in range(int(len(musiclist)/2)):   
-        a = musiclist[titlecount].split("title")
-        print(str(count)+ "  " + a[1].replace("': ",""))        
-        titlecount += 2
+            namelist.append(c[count])          
         count += 1
-    print("N  Next Page" )    
-    count = 1
-    songcount = 0
-    titlecount = 0
+    count = 0
+    for i in range(int(len(idlink)/2)):   
+        a = idlink[count].split("id")        
+        pidlink.append(a[1].replace("': ",""))
+        count += 2        
+    for i in pidlink:    
+        url.append("https://www.youtube.com/watch?v="+i.replace("'",""))        
+    count = 0
+    for i in range(int(len(namelist)/2)):   
+        a = namelist[count2].split("title")       
+        print(str(count+1)+ "  " + a[1])     
+        name.append(a[1])
+        count2 += 2
+        count += 1
+    print("N  Next Page")
+    print("B  Back to search")
+    count2 = 0
+    count = 0
     select(search)
 
 def select(search):
-    select = (input("Select -> "))
-    if select == "N":  
-        musiclist.clear()
-        musiclink.clear()
-        nmusiclink.clear()        
-        url.clear()
-        search.next()
-        a = list((search.result().items()))
-        b = (''.join(str(e) for e in a))
-        c = b.split(',')
-        links(c,search)
-        mlist(c,search)          
-    elif int(select) > 20:
-        pass
+    a = input("Select --> ")
+    if a == "N":
+        nextpage(search)
+    if a == "B":
+        main()    
+    if a.isdigit() == True:
+        if int(a) > 20:
+            pass
+        else:
+            play(int(a),1,0)
     else:
-        play(select)
+        print("typo")
+        pass
 
-def play(select):    
-    video = pafy.new(url[int(select)-1])
-    best = video.getbest()
-    playurl = best.url
-    Instance = vlc.Instance("--no-video")
-    player = Instance.media_player_new()
-    Media = Instance.media_new(playurl)
-    Media.get_mrl()
-    player.set_media(Media)    
-    player.play()          
-    ab = YouTube(url[int(select)-1]).title        
-    print("Now playing " + ab)      
-    a = int(player.get_length()/1000)-round(int(player.get_time()/1000))
-    next(url[int(select)-1],a)
-    
-def next(url,status):
-    count = 0        
-    new.clear()
-    nextsong.clear()
+def nextpage(search):
+    idlink.clear()
+    pidlink.clear()
+    url.clear()
+    namelist.clear()
+    name.clear()
+    search.next()
+    a = list((search.result().items()))
+    b = (''.join(str(e) for e in a))
+    c = b.split(',')
+    get(c,search)
+
+def play(a,b,c):    
+    if b == 1:
+        url1 = url[a-1]       
+        video = pafy.new(url1)
+        audio = video.getbestaudio().url
+        media = vlc.MediaPlayer(audio)
+        print("Now Playing --> " + YouTube(url1).title)
+        media.play()   
+        time.sleep(1)  
+        new.clear()       
+        next(url1,media)
+    if c == 1: 
+        url1 = nextsong[0]        
+        video = pafy.new(url1)
+        audio = video.getbestaudio().url
+        media = vlc.MediaPlayer(audio)
+        print("Now Playing --> " + YouTube(url1).title)
+        media.play()           
+        time.sleep(1)      
+        new.clear()   
+        next(url1,media)
+        
+
+def countdown(media):             
+    bar = int(media.get_length()/1000)-round(int(media.get_time()/1000))
+    print("Still have " + str(bar) +"sec")
+
+def next(url,media):
+    count = 0         
     page = urlopen((url))    
     soup =  BeautifulSoup(page, "html.parser" )
     b = (''.join(str(e) for e in soup))
@@ -136,61 +211,65 @@ def next(url,status):
         if "https://i.ytimg.com" not in i:
             pass
         else:        
-            new.append("https://www.youtube.com/watch?v="+i.split("/")[4])         
-        count += 1
-    count = 0   
-    check(url,status)                
-    
+            new.append("https://www.youtube.com/watch?v="+i.split("/")[4])               
+        count += 1    
+    check(url,media,url)              
 
-def check(name,status):
-    nextsong.clear()           
+def check(name,media,url):              
     count = 0
-    for i in new:  
+    nextsong.clear()
+    for i in new:        
         count +=  1
         if count >= 6:
-            if i == name:                
+            if len(i) == 43:            
+                if i == name:                
+                    continue
+                else:                                
+                    nextsong.append(i)                
+                break   
+            else:
                 continue
-            else:                
-                nextsong.append(i)
-            break        
-    playnext(nextsong,status)
+    nextplay(media,url)         
 
-def playnext(song,status):    
-    video = pafy.new(song[0])
-    best = video.getbest()
-    playurl = best.url
-    Instance = vlc.Instance("--no-video")
-    player = Instance.media_player_new()
-    Media = Instance.media_new(playurl)
-    Media.get_mrl()
-    player.set_media(Media)   
-    print("Next Song is "+YouTube(song[0]).title )
-    t1 = Thread(target=main)
-    t2 = Thread(target=timing)
+def nextplay(media,url):
+    global stop
+    length = int(media.get_length()/1000)-round(int(media.get_time()/1000))
+    t1 = Thread(target=main2,args=(media,url,))    
     t1.start()
-    t2.start()      
-    c = status-10
-    while c> 0:                           
-        if c == int(status/4*3):
-            print("25%")
-        elif c == int(status/2):
-            print("50%")
-        elif c == int(status/4):
-            print("75%")
-        else:
+    if stop == False:
+        wait(length,media)    
+    if stop == True:
+        wait2(length,media)    
+    
+def wait(length,media):  
+    global stop      
+    for i in range(length):  
+        length -= 1
+        if stop == True:
+            sys.exit()
+        time.sleep(1)
+        if length != 0:
             pass
-        time.sleep(1)     
-        c -= 1        
-    player.play()          
-    ab = YouTube(song[0]).title        
-    print("Now playing " + ab)       
-    next(song[0],YouTube(song[0]).length)
+        else:                        
+            play(-1,0,1)
+
+def wait2(length,media):  
+    global stop      
+    for i in range(length):  
+        length -= 1
+        if stop == False:
+            sys.exit()
+        time.sleep(1)
+        if length != 0:
+            pass
+        else:                        
+            play(-1,0,1)
 
 def download(url):
     os.system("mkdir Music > /dev/null 2>&1")
     music = YouTube(url).streams.filter(audio_codec="mp4a.40.2").desc().first().download(filename="naudio")                            
     rname= YouTube(url).title.replace("/","")                                              
-    os.rename("naudio.mp4","Music/"+rname+".mp3")          
+    os.rename("naudio.mp4","Music/"+rname+".mp3")
+    print(YouTube(url).title +" is downloaded") 
 
-while True:
-    main()
+main()
