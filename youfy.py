@@ -22,56 +22,56 @@ stop = False
 
 def main2(media,url):    
     global stop 
-    while True:
-        print("<1> Stop  <2> Next Song  <3> Find Song <4> Check Status  <5> Download Song  <6> Save to Playlist")
-        a2 = (input("Choose -->  "))
-        if a2 == "1":
-            if stop == False:
-                stop = True
-                continue                
-            if stop == True:      
-                stop = False
-                continue                 
-        if a2 == "2":                
-            if stop == False:
-                stop = True
-                media.stop()
-                play(-1,0,1)  
-            if stop == True:      
-                stop = False
-                media.stop()
-                play(-1,0,1)  
-        if a2 == "3":
-            if stop == False:
-                stop = True
-                t1 = Thread(target=search)    
-                t1.start()
-                time.sleep(8)
-                media.stop()
-                break
-            if stop == True:      
-                stop = False
-                t1 = Thread(target=search)    
-                t1.start()
-                time.sleep(8)
-                media.stop()
-                break           
-        if a2 == "4":
-            countdown(media)
-        if a2 == "5":
-            print(YouTube(url).title +" is downloading")
-            t1 = Thread(target=download,args=(url,))    
-            t1.start()   
-            continue
-        if a2 == '6':
-            save = open("Playlist.txt","a+")            
-            save.writelines(url+"\n")
-            save.writelines(YouTube(url).title + "\n")   
-            save.close()            
-            continue
-        else:
-            print("Typo")
-            continue
+    print("<1> Stop  <2> Next Song  <3> Find Song <4> Check Status  <5> Download Song  <6> Save to Playlist")
+    a2 = (input("Choose -->  "))
+    if a2 == "1":
+        if stop == False:
+            stop = True
+            main2(media,url)             
+        if stop == True:      
+            stop = False
+            main2(media,url)                
+    if a2 == "2":                
+        if stop == False:
+            stop = True
+            media.stop()
+            play(-1,0,1)  
+        if stop == True:      
+            stop = False
+            media.stop()
+            play(-1,0,1)  
+    if a2 == "3":
+        if stop == False:
+            stop = True
+            t1 = Thread(target=search)    
+            t1.start()
+            time.sleep(8)
+            media.stop()
+            main2(media,url)
+        if stop == True:      
+            stop = False
+            t1 = Thread(target=search)    
+            t1.start()
+            time.sleep(8)
+            media.stop()
+            main2(media,url)           
+    if a2 == "4":
+        countdown(media)
+        main2(media,url)
+    if a2 == "5":
+        print(YouTube(url).title +" is downloading")
+        t1 = Thread(target=download,args=(url,))    
+        t1.start()   
+        main2(media,url)
+    if a2 == '6':
+        save = open("Playlist.txt","a+")            
+        save.writelines(url+"\n")
+        save.writelines(YouTube(url).title + "\n")   
+        save.close()            
+        main2(media,url)
+    else:
+        print("Typo")
+        main2(media,url)
 
 def main():
     while True:
